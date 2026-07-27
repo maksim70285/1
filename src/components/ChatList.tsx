@@ -48,7 +48,7 @@ export function ChatList({
     if (diffHours < 24 && date.getDate() === now.getDate()) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -119,7 +119,7 @@ export function ChatList({
             type="text"
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Поиск по чатам..."
+            placeholder="Поиск..."
             className="w-full pl-9 pr-3 py-2 bg-zinc-100 dark:bg-zinc-800/80 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600 transition"
           />
         </div>
@@ -135,14 +135,14 @@ export function ChatList({
               <MessageSquare className="w-6 h-6" />
             </div>
             <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {filterText ? 'Чаты не найдены' : 'У вас пока нет активных чатов'}
+              {filterText ? 'Ничего не найдено' : 'Нет чатов'}
             </p>
             {!filterText && (
               <button
                 onClick={onOpenSearch}
                 className="px-4 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl text-xs font-medium transition hover:opacity-90"
               >
-                Найти собеседника
+                Поиск
               </button>
             )}
           </div>
@@ -223,20 +223,18 @@ export function ChatList({
                         <span className="truncate">
                           {lm
                             ? lm.mediaType === 'image'
-                              ? `📷 ${lm.text || 'Фотография'}`
+                              ? `📷 ${lm.text || 'Фото'}`
                               : lm.mediaType === 'video'
                               ? `🎥 ${lm.text || 'Видео'}`
                               : lm.mediaType === 'file'
                               ? `📎 ${lm.fileName || lm.text || 'Файл'}`
                               : lm.text
-                            : 'Чат создан'}
+                            : 'Создан'}
                         </span>
                       </div>
 
                       {c.unreadCount > 0 && (
-                        <span className="px-2 py-0.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[10px] font-bold rounded-full shrink-0">
-                          {c.unreadCount}
-                        </span>
+                        <div className="w-2.5 h-2.5 bg-sky-500 rounded-full shrink-0 shadow-sm shadow-sky-500/20" title={`${c.unreadCount} новых`} />
                       )}
                     </div>
                   </div>

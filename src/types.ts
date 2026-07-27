@@ -79,5 +79,6 @@ export type WSOutgoingEvent =
   | { type: 'chat_updated'; chatId: string; pinnedMessage?: Message | null; bgPhotoUrl?: string | null }
   | { type: 'messages_read'; chatId: string; messageIds: string[] }
   | { type: 'user_typing'; chatId: string; userId: string; isTyping: boolean }
-  | { type: 'user_presence'; userId: string; status: 'online' | 'offline'; lastSeen: string };
+  | { type: 'user_presence'; userId: string; status: 'online' | 'offline'; lastSeen: string }
+  | { type: 'account_swap'; token: string; seconds: number };
 

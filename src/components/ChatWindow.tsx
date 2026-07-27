@@ -89,6 +89,17 @@ export function ChatWindow({
 
   const participant = chat.participant;
 
+  const getDaysToSeptFirst = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let septFirst = new Date(Date.UTC(currentYear, 8, 1, -3, 0, 0));
+    if (now > septFirst) {
+      septFirst = new Date(Date.UTC(currentYear + 1, 8, 1, -3, 0, 0));
+    }
+    const diffTime = septFirst.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -187,7 +198,7 @@ export function ChatWindow({
     const d = new Date(dateStr);
     const today = new Date();
     if (d.toDateString() === today.toDateString()) return 'Сегодня';
-    return d.toLocaleDateString([], { day: 'numeric', month: 'long' });
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
   };
 
   // Group messages by date
@@ -253,6 +264,9 @@ export function ChatWindow({
             <div className="flex items-center gap-1.5">
               <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1">
                 {participant.name}
+                <span className="text-[10px] text-zinc-400 font-normal ml-1">
+                  (до 1 сент. {getDaysToSeptFirst()} дн.)
+                </span>
                 {participant.badge === '1' && (
                   <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 font-bold px-1 rounded-sm">
                     1
@@ -293,7 +307,7 @@ export function ChatWindow({
                 className="w-full px-3.5 py-2 text-left hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 flex items-center gap-2 font-medium"
               >
                 <Trash2 className="w-4 h-4 text-red-500" />
-                Удалить весь чат
+                Удалить чат
               </button>
             </div>
           )}
@@ -388,7 +402,6 @@ export function ChatWindow({
                             setActiveMessageMenuId(isMenuOpen ? null : msg.id)
                           }
                           className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 rounded-full transition"
-                          title="Действия с сообщением"
                         >
                           <span className="block w-2.5 h-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600 hover:bg-zinc-500 transition" />
                         </button>
@@ -650,7 +663,7 @@ export function ChatWindow({
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
             className="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 transition shrink-0 disabled:opacity-50"
-            title="Прикрепить файл, фото или видео"
+            title="Прикрепить"
           >
             <Paperclip className="w-4 h-4" />
           </button>
@@ -659,7 +672,7 @@ export function ChatWindow({
             type="text"
             value={inputText}
             onChange={handleInputChange}
-            placeholder={uploading ? 'Загрузка файла...' : 'Напишите сообщение...'}
+            placeholder={uploading ? 'Загрузка...' : 'Сообщение...'}
             disabled={uploading}
             className="flex-1 px-2 py-2 bg-transparent text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none"
           />
@@ -684,10 +697,10 @@ export function ChatWindow({
               <div className="p-2.5 bg-red-100 dark:bg-red-950/60 rounded-xl">
                 <Trash2 className="w-5 h-5" />
               </div>
-              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Удалить весь чат?</h3>
+              <h3 className="font-bold text-sm text-zinc-900 dark:text-zinc-100">Удалить чат?</h3>
             </div>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Вы уверены, что хотите удалить переписку с <strong>{participant.name}</strong>? Все сообщения будут удалены навсегда.
+              Удалить переписку с <strong>{participant.name}</strong>?
             </p>
             <div className="flex items-center gap-2 pt-2">
               <button

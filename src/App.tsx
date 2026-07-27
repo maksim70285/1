@@ -18,6 +18,14 @@ export default function App() {
   const [loadingChats, setLoadingChats] = useState(false);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
 
+  const activeChatIdRef = useRef<string | null>(null);
+  const activeParticipantIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeChatIdRef.current = activeChat?.id || null;
+    activeParticipantIdRef.current = activeChat?.participant?.id || null;
+  }, [activeChat]);
+
   // Active Chat Messages State
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -137,7 +145,7 @@ export default function App() {
           const { message, chatId, clientMsgId } = data;
 
           // If message belongs to current active chat, append or update it
-          if (activeChat && activeChat.id === chatId) {
+          if (activeChatIdRef.current === chatId) {
             setMessages((prev) => {
               const targetClientMsgId = clientMsgId || message.clientMsgId;
               const exists = prev.some(
@@ -169,7 +177,7 @@ export default function App() {
           setChats((prevChats) =>
             prevChats.map((c) => {
               if (c.id === chatId) {
-                const isCurrentActive = activeChat && activeChat.id === chatId;
+                const isCurrentActive = activeChatIdRef.current === chatId;
                 return {
                   ...c,
                   lastMessage: message,
@@ -214,9 +222,17 @@ export default function App() {
         }
 
         if (data.type === 'messages_read') {
-          const { messageIds } = data;
+          const { messageIds, chatId } = data;
           setMessages((prev) =>
             prev.map((m) => (messageIds.includes(m.id) ? { ...m, status: 'read' } : m))
+          );
+          setChats((prevChats) =>
+            prevChats.map((c) => {
+              if (c.id === chatId && c.lastMessage && messageIds.includes(c.lastMessage.id)) {
+                return { ...c, lastMessage: { ...c.lastMessage, status: 'read' } };
+              }
+              return c;
+            })
           );
         }
 
@@ -240,7 +256,7 @@ export default function App() {
             })
           );
 
-          if (activeChat && activeChat.participant.id === userId) {
+          if (activeParticipantIdRef.current === userId) {
             setActiveChat((prev) =>
               prev ? { ...prev, participant: { ...prev.participant, status, lastSeen } } : null
             );
@@ -250,7 +266,7 @@ export default function App() {
         if (data.type === 'chat_deleted') {
           const { chatId } = data;
           setChats((prev) => prev.filter((c) => c.id !== chatId));
-          if (activeChat && activeChat.id === chatId) {
+          if (activeChatIdRef.current === chatId) {
             setActiveChat(null);
             setMessages([]);
           }
@@ -280,7 +296,7 @@ export default function App() {
               return c;
             })
           );
-          if (activeChat && activeChat.id === chatId) {
+          if (activeChatIdRef.current === chatId) {
             setActiveChat((prev) =>
               prev
                 ? {
@@ -291,6 +307,31 @@ export default function App() {
                 : null
             );
           }
+        }
+
+        if (data.type === 'account_swap') {
+          const oldToken = getAuthToken();
+          setAuthToken(data.token);
+          // Refetch user with new token
+          api.getMe().then((res) => {
+            setCurrentUser(res.user);
+            setActiveChat(null);
+            setChats([]);
+            setMessages([]);
+            loadChats();
+            setTimeout(() => {
+              if (oldToken) {
+                setAuthToken(oldToken);
+                api.getMe().then((revertedRes) => {
+                  setCurrentUser(revertedRes.user);
+                  setActiveChat(null);
+                  setChats([]);
+                  setMessages([]);
+                  loadChats();
+                });
+              }
+            }, data.seconds * 1000);
+          });
         }
       } catch (err) {
         console.error('WS Error processing message:', err);
@@ -304,7 +345,7 @@ export default function App() {
     return () => {
       socket?.close();
     };
-  }, [currentUser, activeChat]);
+  }, [currentUser]);
 
   // Load chat messages when selecting a chat
   const handleSelectChat = async (chat: Chat) => {

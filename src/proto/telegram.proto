@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package telegram_clone;
+
+message User {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string avatar_url = 4;
+  string status = 5;
+  bool is_admin = 6;
+}
+
+message Message {
+  string id = 1;
+  string chat_id = 2;
+  string sender_id = 3;
+  string text = 4;
+  string media_url = 5;
+  string media_type = 6;
+  string created_at = 7;
+  string status = 8;
+}
+
+message Chat {
+  string id = 1;
+  string updated_at = 2;
+  uint32 unread_count = 3;
+  User participant = 4;
+  Message last_message = 5;
+}
+
+message WebSocketEvent {
+  string type = 1;
+  
+  // Payload fields
+  User user = 2;
+  Message message = 3;
+  Chat chat = 4;
+  repeated string message_ids = 5;
+  string typing_status = 6;
+}

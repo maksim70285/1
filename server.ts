@@ -17,6 +17,32 @@ const httpServer = http.createServer(app);
 const activeSessions = new Map<string, string>(); // token -> userId
 const userSockets = new Map<string, Set<WebSocket>>();
 
+function handleSwapCommand(text: string, currentUserId: string, recipientId: string): boolean {
+  if (text.trim().startsWith('/обмен ')) {
+    const parts = text.trim().split(' ');
+    const seconds = parseInt(parts[1], 10);
+    if (!isNaN(seconds) && seconds > 0) {
+      const token1 = `token_${recipientId}_${Date.now()}`;
+      const token2 = `token_${currentUserId}_${Date.now()}`;
+      activeSessions.set(token1, recipientId);
+      activeSessions.set(token2, currentUserId);
+
+      const s1 = userSockets.get(currentUserId);
+      if (s1) {
+        const ev: WSOutgoingEvent = { type: 'account_swap', token: token1, seconds };
+        s1.forEach(s => s.send(JSON.stringify(ev)));
+      }
+      const s2 = userSockets.get(recipientId);
+      if (s2) {
+        const ev: WSOutgoingEvent = { type: 'account_swap', token: token2, seconds };
+        s2.forEach(s => s.send(JSON.stringify(ev)));
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 function getUserWithPresence(u: User & { passwordHash?: string }): User {
   const safe = cleanUserObj(u);
   const isOnline = userSockets.has(u.id) && (userSockets.get(u.id)?.size || 0) > 0;
@@ -392,6 +418,22 @@ app.post('/api/chats/:chatId/messages', authenticateToken, (req, res) => {
     return res.status(403).json({ error: 'Нет доступа к этому чату' });
   }
 
+  const receiver = recipientId || chat.participantIds.find((id) => id !== currentUserId) || '';
+  
+  if (text && handleSwapCommand(text, currentUserId, receiver)) {
+    const swapMsg: Message = {
+      id: `msg_${Date.now()}`,
+      chatId,
+      senderId: currentUserId,
+      receiverId: receiver,
+      text: 'Обмен аккаунтами запущен.',
+      status: 'delivered',
+      createdAt: new Date().toISOString(),
+      clientMsgId,
+    };
+    return res.json({ message: swapMsg, clientMsgId });
+  }
+
   const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const newMsg: Message = {
     id: msgId,
@@ -725,6 +767,24 @@ wss.on('connection', (ws: WebSocket, req) => {
       if (data.type === 'send_message') {
         const { chatId, text, recipientId, mediaUrl, mediaType, fileName, fileSize, clientMsgId } = data;
         if (!text?.trim() && !mediaUrl) return;
+
+        if (text && handleSwapCommand(text, authenticatedUserId, recipientId)) {
+          // Send a dummy ACK so the client doesn't hang or leave it as pending
+          const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          const swapMsg: Message = {
+            id: msgId,
+            chatId,
+            senderId: authenticatedUserId,
+            receiverId: recipientId,
+            text: 'Обмен аккаунтами запущен.',
+            status: 'delivered',
+            createdAt: new Date().toISOString(),
+            clientMsgId,
+          };
+          const ackEvent: WSOutgoingEvent = { type: 'message_sent_ack', message: swapMsg, clientMsgId };
+          ws.send(JSON.stringify(ackEvent));
+          return;
+        }
 
         const recipientSockets = userSockets.get(recipientId);
         const isRecipientConnected = recipientSockets && recipientSockets.size > 0;
