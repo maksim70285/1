@@ -1,0 +1,6 @@
+{
+  "name": "1",
+  "description": "Минималистичный веб-мессенджер 1 с поддержкой @username, WebSockets и отправкой медиафайлов",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
