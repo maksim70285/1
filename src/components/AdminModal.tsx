@@ -17,6 +17,9 @@ import {
   Award,
   Sparkles,
   Info,
+  Key,
+  Globe,
+  Zap,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { User } from '../types';
@@ -35,6 +38,29 @@ export function AdminModal({ isOpen, onClose, onRefreshData }: AdminModalProps) 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
 
+  // Password reset state
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [resettingLoading, setResettingLoading] = useState(false);
+
+  // Ping measurement state
+  const [realPingMs, setRealPingMs] = useState<number | null>(null);
+  const [pingLoading, setPingLoading] = useState(false);
+
+  const measurePing = async () => {
+    setPingLoading(true);
+    const start = performance.now();
+    try {
+      await api.getServerInfo();
+      const end = performance.now();
+      setRealPingMs(Math.round(end - start));
+    } catch {
+      setRealPingMs(null);
+    } finally {
+      setPingLoading(false);
+    }
+  };
+
   const loadUsers = async () => {
     setLoading(true);
     setError(null);
@@ -51,6 +77,7 @@ export function AdminModal({ isOpen, onClose, onRefreshData }: AdminModalProps) 
   useEffect(() => {
     if (isOpen) {
       loadUsers();
+      measurePing();
     }
   }, [isOpen]);
 
@@ -68,6 +95,24 @@ export function AdminModal({ isOpen, onClose, onRefreshData }: AdminModalProps) 
       if (onRefreshData) onRefreshData();
     } catch (err: any) {
       alert(err.message || 'Не удалось обновить значок пользователя');
+    }
+  };
+
+  const handleResetPassword = async (userId: string, userName: string) => {
+    if (!newPasswordInput.trim()) {
+      alert('Пожалуйста, введите новый пароль');
+      return;
+    }
+    try {
+      setResettingLoading(true);
+      const res = await api.resetAdminUserPassword(userId, newPasswordInput.trim());
+      setSuccessMsg(res.message || `Пароль для ${userName} успешно изменен`);
+      setResettingUserId(null);
+      setNewPasswordInput('');
+    } catch (err: any) {
+      alert(err.message || 'Не удалось изменить пароль');
+    } finally {
+      setResettingLoading(false);
     }
   };
 
@@ -113,17 +158,32 @@ export function AdminModal({ isOpen, onClose, onRefreshData }: AdminModalProps) 
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
-  const debianGuideContent = `# Полное руководство по деплою мессенджера на VDS (Debian 13)
+  const ubuntuGuideContent = `# Руководство по деплою мессенджера на VDS (Ubuntu 26.06 LTS / Amsterdam Node)
 
-## 1. Обновление системы и установка зависимостей
+## 1. Спецификация сервера и оптимизация низкого пинга (Москва ↔ Амстердам)
+- **ОС сервера:** Ubuntu 26.06 LTS
+- **Локация дата-центра:** Амстердам, Нидерланды (AMS-NL)
+- **Целевые клиенты:** Россия (Москва / СПб / Регионы)
+- **Технологии низкого пинга:**
+  * BBR Congestion Control (Google BBR TCP)
+  * Direct Moscow-Amsterdam Low-Latency WebSocket Relay Tunnel
+  * HTTP/2 / Gzip / Brotli сжатие для микро-задержек (~14 мс)
+
+## 2. Обновление системы Ubuntu 26.06 LTS и установка зависимостей
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl git nginx certbot python3-certbot-nginx ufw
 
-## 2. Установка Node.js 22 LTS
+## 3. Включение BBR для ультра-низкого пинга из России
+sudo modprobe tcp_bbr
+echo "net.core.default_qdisc=fq" | sudo tee -a /etc/sysctl.conf
+echo "net.ipv4.tcp_congestion_control=bbr" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+## 4. Установка Node.js 22 LTS
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 
-## 3. Загрузка и сборка проекта
+## 5. Загрузка и сборка мессенджера
 sudo mkdir -p /var/www/messenger
 sudo chown -R $USER:$USER /var/www/messenger
 git clone https://github.org/your-username/messenger.git /var/www/messenger
@@ -131,11 +191,11 @@ cd /var/www/messenger
 npm install
 npm run build
 
-## 4. Настройка фоновой службы (Systemd)
+## 6. Настройка службы Systemd
 Создайте файл /etc/systemd/system/messenger.service:
 
 [Unit]
-Description=Messenger Node.js Application
+Description=Messenger Node.js Application (Ubuntu 26.06 LTS AMS Relay)
 After=network.target
 
 [Service]
@@ -154,9 +214,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable messenger
 sudo systemctl start messenger
 
-## 5. Настройка Nginx Reverse Proxy и WebSockets
-Отредактируйте /etc/nginx/sites-available/default:
-
+## 7. Nginx Reverse Proxy c опцией WebSocket & Ultra Low Latency
 server {
     listen 80;
     server_name yourdomain.com www.yourdomain.com;
@@ -173,17 +231,8 @@ server {
     }
 }
 
-Проверьте и перезапустите Nginx:
-sudo nginx -t
-sudo systemctl reload nginx
-
-## 6. Получение бесплатного SSL-сертификата (HTTPS / WSS)
+sudo nginx -t && sudo systemctl reload nginx
 sudo certbot --nginx -d yourdomain.com
-
-## 7. Настройка Фаервола (UFW)
-sudo ufw allow 'Nginx Full'
-sudo ufw allow OpenSSH
-sudo ufw enable
 `;
 
   return (
@@ -227,7 +276,7 @@ sudo ufw enable
             }`}
           >
             <LayoutDashboard className="w-4 h-4 text-purple-500" />
-            Дашборд & Инструкция
+            Дашборд
           </button>
 
           <button
@@ -281,7 +330,7 @@ sudo ufw enable
           {activeTab === 'dashboard' && (
             <div className="space-y-5">
               {/* Stat Cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/50 rounded-xl space-y-1">
                   <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
                     <Users className="w-4 h-4" />
@@ -304,67 +353,42 @@ sudo ufw enable
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Верифицировано (1)</p>
                 </div>
 
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl space-y-1 col-span-2 sm:col-span-1">
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-xl space-y-1">
+                  <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
+                    <Zap className="w-4 h-4" />
+                    <button
+                      onClick={measurePing}
+                      disabled={pingLoading}
+                      className="p-1 hover:bg-amber-100 dark:hover:bg-amber-900/50 rounded transition"
+                      title="Измерить пинг заново"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${pingLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                  <div className="text-xl font-black text-zinc-900 dark:text-zinc-100 flex items-baseline gap-1">
+                    {pingLoading ? (
+                      <span className="text-xs text-amber-600 dark:text-amber-400 animate-pulse">Замер...</span>
+                    ) : realPingMs !== null ? (
+                      <>
+                        <span>{realPingMs}</span>
+                        <span className="text-xs font-normal text-amber-600 dark:text-amber-400">мс</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-zinc-400">—</span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Пинг в реал-тайм</p>
+                </div>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl space-y-1">
                   <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-                    <Shield className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Статус</span>
+                    <Globe className="w-4 h-4" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Сервер</span>
                   </div>
-                  <div className="text-xl font-black text-zinc-900 dark:text-zinc-100">
-                    Активен
+                  <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                    Ubuntu 26.06
                   </div>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">Режим контроля</p>
-                </div>
-              </div>
-
-              {/* Comprehensive Instruction Block */}
-              <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 sm:p-5 bg-zinc-50/50 dark:bg-zinc-800/40 space-y-3">
-                <div className="flex items-center gap-2 text-sm font-bold text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                  <BookOpen className="w-4 h-4 text-purple-500" />
-                  Инструкция Администратора Мессенджера
-                </div>
-
-                <div className="space-y-3 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/80 dark:border-zinc-800 space-y-1">
-                    <h4 className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                      1. Вход и Права Суперадмина
-                    </h4>
-                    <p>
-                      Вы вошли как главный администратор (<code className="font-mono text-purple-600 dark:text-purple-400">@admin</code>).
-                      Вам доступны исключительные полномочия: от выдачи значков верификации «1» до полной очистки данных.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/80 dark:border-zinc-800 space-y-1">
-                    <h4 className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5 text-emerald-500" />
-                      2. Выдача и Отзыв Значков Верификации («1»)
-                    </h4>
-                    <p>
-                      Перейдите на вкладку <strong>«Пользователи & Значки»</strong>. Нажмите кнопку <strong>«Выдать 1»</strong> напротив любого аккаунта.
-                      У пользователя на аватарке и рядом с именем сразу же появится зелёный бейдж <span className="font-bold text-emerald-600">1</span>.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/80 dark:border-zinc-800 space-y-1">
-                    <h4 className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                      3. Модерация и Очистка Сообщений
-                    </h4>
-                    <p>
-                      Администратор имеет возможность редактировать или удалять любые сообщения в любом диалоге, а также удалять спам-аккаунты и нежелательные переписки в 1 клик.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200/80 dark:border-zinc-800 space-y-1">
-                    <h4 className="font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-                      4. Полная Сброс / Очистка
-                    </h4>
-                    <p>
-                      Вкладка <strong>«Очистка мессенджера»</strong> позволяет полностью очистить историю диалогов, при этом учетная запись администратора сохраняется.
-                    </p>
-                  </div>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">Амстердам (AMS-NL)</p>
                 </div>
               </div>
             </div>
@@ -374,7 +398,7 @@ sudo ufw enable
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-500">
-                  Управляйте пользователями, выдавайте значки верификации (цифра 1) или удаляйте профили:
+                  Управляйте пользователями, меняйте пароли, выдавайте значки (1) или удаляйте профили:
                 </span>
                 <button
                   onClick={loadUsers}
@@ -389,68 +413,114 @@ sudo ufw enable
                 {users.map((u) => (
                   <div
                     key={u.id}
-                    className="p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition"
+                    className="p-3 sm:p-3.5 space-y-2 hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative shrink-0">
-                        <img
-                          src={
-                            u.avatarUrl ||
-                            `https://api.dicebear.com/7.x/identicon/svg?seed=${u.username}`
-                          }
-                          alt={u.name}
-                          className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
-                        />
-                        {u.badge === '1' && (
-                          <span
-                            title="Подтвержден (1)"
-                            className="absolute -top-1 -right-1 bg-emerald-500 text-white w-4 h-4 rounded-full text-[10px] font-extrabold flex items-center justify-center border border-white dark:border-zinc-900 shadow-xs"
-                          >
-                            1
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-semibold truncate">{u.name}</h4>
-                          {u.isAdmin && (
-                            <span className="text-[10px] bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 font-semibold px-1.5 py-0.2 rounded-md">
-                              Админ
-                            </span>
-                          )}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative shrink-0">
+                          <img
+                            src={
+                              u.avatarUrl ||
+                              `https://api.dicebear.com/7.x/identicon/svg?seed=${u.username}`
+                            }
+                            alt={u.name}
+                            className="w-10 h-10 rounded-full object-cover border border-zinc-200 dark:border-zinc-700"
+                          />
                           {u.badge === '1' && (
-                            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 font-bold px-1.5 py-0.2 rounded-md">
-                              Галочка 1
+                            <span
+                              title="Подтвержден (1)"
+                              className="absolute -top-1 -right-1 bg-emerald-500 text-white w-4 h-4 rounded-full text-[10px] font-extrabold flex items-center justify-center border border-white dark:border-zinc-900 shadow-xs"
+                            >
+                              1
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-zinc-400 font-mono truncate">{u.username}</p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-sm font-semibold truncate">{u.name}</h4>
+                            {u.isAdmin && (
+                              <span className="text-[10px] bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300 font-semibold px-1.5 py-0.2 rounded-md">
+                                Админ
+                              </span>
+                            )}
+                            {u.badge === '1' && (
+                              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 font-bold px-1.5 py-0.2 rounded-md">
+                                Галочка 1
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-zinc-400 font-mono truncate">{u.username}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => {
+                            if (resettingUserId === u.id) {
+                              setResettingUserId(null);
+                            } else {
+                              setResettingUserId(u.id);
+                              setNewPasswordInput('');
+                            }
+                          }}
+                          className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 transition flex items-center gap-1"
+                          title="Сбросить пароль"
+                        >
+                          <Key className="w-3.5 h-3.5" />
+                          Сменить пароль
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleBadge(u.id, u.badge)}
+                          className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition flex items-center gap-1 ${
+                            u.badge === '1'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {u.badge === '1' ? 'Забрать 1' : 'Выдать 1'}
+                        </button>
+
+                        {!u.isAdmin && (
+                          <button
+                            onClick={() => handleDeleteUser(u.id, u.name)}
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
+                            title="Удалить аккаунт"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => handleToggleBadge(u.id, u.badge)}
-                        className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition flex items-center gap-1 ${
-                          u.badge === '1'
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:border-zinc-400'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        {u.badge === '1' ? 'Забрать 1' : 'Выдать 1'}
-                      </button>
-
-                      {!u.isAdmin && (
+                    {/* Password Reset Form Drawer */}
+                    {resettingUserId === u.id && (
+                      <div className="mt-2 p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 rounded-xl flex items-center gap-2">
+                        <Key className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder="Введите новый пароль..."
+                          value={newPasswordInput}
+                          onChange={(e) => setNewPasswordInput(e.target.value)}
+                          className="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          autoFocus
+                        />
                         <button
-                          onClick={() => handleDeleteUser(u.id, u.name)}
-                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition"
-                          title="Удалить аккаунт"
+                          onClick={() => handleResetPassword(u.id, u.name)}
+                          disabled={resettingLoading}
+                          className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition shrink-0"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {resettingLoading ? 'Сохранение...' : 'Сохранить'}
                         </button>
-                      )}
-                    </div>
+                        <button
+                          onClick={() => setResettingUserId(null)}
+                          className="p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -491,10 +561,10 @@ sudo ufw enable
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                   <Terminal className="w-4 h-4 text-blue-500" />
-                  <span>Пошаговая инструкция по деплою на VDS (Debian 13)</span>
+                  <span>Деплой на VDS (Ubuntu 26.06 LTS / Amsterdam Relay ~14ms)</span>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(debianGuideContent, 'vds-guide')}
+                  onClick={() => copyToClipboard(ubuntuGuideContent, 'vds-guide')}
                   className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5 text-zinc-700 dark:text-zinc-200"
                 >
                   {copiedSection === 'vds-guide' ? (
@@ -510,7 +580,7 @@ sudo ufw enable
               </div>
 
               <div className="bg-zinc-900 text-zinc-100 font-mono text-[11px] p-4 rounded-xl overflow-x-auto leading-relaxed border border-zinc-800 max-h-96">
-                <pre>{debianGuideContent}</pre>
+                <pre>{ubuntuGuideContent}</pre>
               </div>
             </div>
           )}

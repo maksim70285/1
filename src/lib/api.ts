@@ -147,6 +147,12 @@ export const api = {
       body: JSON.stringify({ badge }),
     }),
 
+  resetAdminUserPassword: (userId: string, password: string) =>
+    request<{ success: boolean; message: string }>(`/api/admin/users/${userId}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    }),
+
   deleteAdminUser: (userId: string) =>
     request<{ success: boolean; deletedUserId: string }>(`/api/admin/users/${userId}`, {
       method: 'DELETE',
@@ -156,5 +162,8 @@ export const api = {
     request<{ success: boolean; message: string }>('/api/admin/wipe', {
       method: 'POST',
     }),
+
+  getServerInfo: () =>
+    request<{ location: string; target: string; os: string; pingMs: number; status: string }>('/api/server-info'),
 };
 

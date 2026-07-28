@@ -103,7 +103,7 @@ export function UserProfileModal({
       <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-          <h2 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">Настройки профиля</h2>
+          <h2 className="font-semibold text-base text-zinc-900 dark:text-zinc-100">Настройки</h2>
           <button
             onClick={onClose}
             className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
@@ -147,7 +147,7 @@ export function UserProfileModal({
                   onClick={() => fileInputRef.current?.click()}
                   className="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 font-medium"
                 >
-                  Загрузить из галереи
+                  Загрузить
                 </button>
               </div>
 
@@ -160,7 +160,7 @@ export function UserProfileModal({
               {successMsg && (
                 <div className="p-3 text-xs rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2">
                   <Check className="w-4 h-4 shrink-0" />
-                  <span>{successMsg}</span>
+                  <span>Сохранено!</span>
                 </div>
               )}
 
@@ -181,7 +181,7 @@ export function UserProfileModal({
 
                 <div>
                   <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
-                    @username
+                    Логин
                   </label>
                   <div className="relative">
                     <AtSign className="w-4 h-4 absolute left-3.5 top-3 text-zinc-400" />
@@ -201,7 +201,7 @@ export function UserProfileModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                     <Palette className="w-4 h-4 text-purple-500" />
-                    <span>Цвет фона и текста (Палитра)</span>
+                    <span>Тема</span>
                   </div>
                   {(customBgColor || customTextColor) && (
                     <button
@@ -218,7 +218,7 @@ export function UserProfileModal({
                 {/* Background Color Picker */}
                 <div>
                   <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1.5">
-                    Цвет фона приложения
+                    Фон
                   </label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700 shrink-0 shadow-sm">
@@ -227,7 +227,7 @@ export function UserProfileModal({
                         value={customBgColor || '#f4f4f5'}
                         onChange={(e) => onBgColorChange(e.target.value)}
                         className="absolute inset-0 w-12 h-12 -top-1 -left-1 cursor-pointer border-0"
-                        title="Выбрать цвет из палитры"
+                        title="Цвет"
                       />
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -249,7 +249,7 @@ export function UserProfileModal({
                 {/* Text Color Picker */}
                 <div>
                   <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1.5">
-                    Цвет текста
+                    Текст
                   </label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700 shrink-0 shadow-sm">
@@ -258,7 +258,7 @@ export function UserProfileModal({
                         value={customTextColor || '#09090b'}
                         onChange={(e) => onTextColorChange(e.target.value)}
                         className="absolute inset-0 w-12 h-12 -top-1 -left-1 cursor-pointer border-0"
-                        title="Выбрать цвет из палитры"
+                        title="Цвет"
                       />
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -284,7 +284,7 @@ export function UserProfileModal({
                 disabled={saving || !isUsernameValid}
                 className="w-full py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {saving ? 'Сохранение...' : 'Сохранить изменения'}
+                {saving ? 'Сохранение...' : 'Сохранить'}
               </button>
 
               {/* Admin Panel Button if admin */}
@@ -299,7 +299,7 @@ export function UserProfileModal({
                     className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-md"
                   >
                     <Shield className="w-4 h-4" />
-                    <span>Дашборд Администратора</span>
+                    <span>Админка</span>
                   </button>
                 </div>
               )}
@@ -315,7 +315,7 @@ export function UserProfileModal({
                   className="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium transition flex items-center justify-center gap-2"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span>Выйти из аккаунта</span>
+                  <span>Выход</span>
                 </button>
               </div>
             </form>

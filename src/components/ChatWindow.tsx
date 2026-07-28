@@ -89,17 +89,6 @@ export function ChatWindow({
 
   const participant = chat.participant;
 
-  const getDaysToSeptFirst = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    let septFirst = new Date(Date.UTC(currentYear, 8, 1, -3, 0, 0));
-    if (now > septFirst) {
-      septFirst = new Date(Date.UTC(currentYear + 1, 8, 1, -3, 0, 0));
-    }
-    const diffTime = septFirst.getTime() - now.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -264,9 +253,6 @@ export function ChatWindow({
             <div className="flex items-center gap-1.5">
               <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1">
                 {participant.name}
-                <span className="text-[10px] text-zinc-400 font-normal ml-1">
-                  (до 1 сент. {getDaysToSeptFirst()} дн.)
-                </span>
                 {participant.badge === '1' && (
                   <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 font-bold px-1 rounded-sm">
                     1
