@@ -158,10 +158,10 @@ export function AdminModal({ isOpen, onClose, onRefreshData }: AdminModalProps) 
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
-  const ubuntuGuideContent = `# Руководство по деплою мессенджера на VDS (Ubuntu 26.06 LTS / Amsterdam Node)
+  const debianGuideContent = `# Руководство по деплою мессенджера на VDS (Debian 13 / Amsterdam Node)
 
 ## 1. Спецификация сервера и оптимизация низкого пинга (Москва ↔ Амстердам)
-- **ОС сервера:** Ubuntu 26.06 LTS
+- **ОС сервера:** Debian 13 (Trixie)
 - **Локация дата-центра:** Амстердам, Нидерланды (AMS-NL)
 - **Целевые клиенты:** Россия (Москва / СПб / Регионы)
 - **Технологии низкого пинга:**
@@ -169,7 +169,7 @@ export function AdminModal({ isOpen, onClose, onRefreshData }: AdminModalProps) 
   * Direct Moscow-Amsterdam Low-Latency WebSocket Relay Tunnel
   * HTTP/2 / Gzip / Brotli сжатие для микро-задержек (~14 мс)
 
-## 2. Обновление системы Ubuntu 26.06 LTS и установка зависимостей
+## 2. Обновление системы Debian 13 и установка зависимостей
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl git nginx certbot python3-certbot-nginx ufw
 
@@ -195,7 +195,7 @@ npm run build
 Создайте файл /etc/systemd/system/messenger.service:
 
 [Unit]
-Description=Messenger Node.js Application (Ubuntu 26.06 LTS AMS Relay)
+Description=Messenger Node.js Application (Debian 13 AMS Relay)
 After=network.target
 
 [Service]
@@ -386,7 +386,7 @@ sudo certbot --nginx -d yourdomain.com
                     <span className="text-[10px] font-bold uppercase tracking-wider">Сервер</span>
                   </div>
                   <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                    Ubuntu 26.06
+                    Debian 13
                   </div>
                   <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">Амстердам (AMS-NL)</p>
                 </div>
@@ -561,10 +561,10 @@ sudo certbot --nginx -d yourdomain.com
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                   <Terminal className="w-4 h-4 text-blue-500" />
-                  <span>Деплой на VDS (Ubuntu 26.06 LTS / Amsterdam Relay ~14ms)</span>
+                  <span>Деплой на VDS (Debian 13 / Amsterdam Relay ~14ms)</span>
                 </div>
                 <button
-                  onClick={() => copyToClipboard(ubuntuGuideContent, 'vds-guide')}
+                  onClick={() => copyToClipboard(debianGuideContent, 'vds-guide')}
                   className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-xs font-medium rounded-lg transition flex items-center gap-1.5 text-zinc-700 dark:text-zinc-200"
                 >
                   {copiedSection === 'vds-guide' ? (
@@ -580,7 +580,7 @@ sudo certbot --nginx -d yourdomain.com
               </div>
 
               <div className="bg-zinc-900 text-zinc-100 font-mono text-[11px] p-4 rounded-xl overflow-x-auto leading-relaxed border border-zinc-800 max-h-96">
-                <pre>{ubuntuGuideContent}</pre>
+                <pre>{debianGuideContent}</pre>
               </div>
             </div>
           )}

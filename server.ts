@@ -12,7 +12,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Amsterdam -> Russia Low Latency Relay & Server OS Optimization Headers
 app.use((req, res, next) => {
-  res.setHeader('X-Server-OS', 'Ubuntu 26.06 LTS');
+  res.setHeader('X-Server-OS', 'Debian 13 (Trixie)');
   res.setHeader('X-Relay-Node', 'AMS-NL-01 (Amsterdam Direct Relay)');
   res.setHeader('X-Latency-Optimization', 'RU-AMS Direct TCP Tunnel (Ping ~14ms)');
   next();
@@ -22,7 +22,7 @@ app.get('/api/server-info', (req, res) => {
   res.json({
     location: 'Амстердам (AMS-NL)',
     target: 'Россия (Прямой TCP/WS туннель)',
-    os: 'Ubuntu 26.06 LTS',
+    os: 'Debian 13 (Trixie)',
     pingMs: 14,
     status: 'Оптимизировано'
   });
